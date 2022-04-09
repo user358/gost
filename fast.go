@@ -15,14 +15,16 @@ import (
 
 // FastProvider is used to implement Provider.
 type FastProvider struct {
-	f          *fast.Fast
 	urls       []string
 	savingMode bool
 	doer       *http.Client
 }
 
 // NewFastProvider constructor for FastProvider.
-func NewFastProvider() (*FastProvider, error) {
+// saveMode = true using less memory (≒10MB), though low accuracy (especially > 30Mbps).
+// doer is using for making http requests, if it is nil http.DefaultDoer will be used.
+func NewFastProvider(savingMode bool, doer *http.Client) (*FastProvider, error) {
+	// this library is uses for getting urls for testing and fast.com
 	fastCom := fast.New()
 
 	err := fastCom.Init()
@@ -36,17 +38,24 @@ func NewFastProvider() (*FastProvider, error) {
 	}
 
 	r := &FastProvider{
-		f:    fastCom,
-		urls: urls,
+		urls:       urls,
+		savingMode: savingMode,
 	}
 
 	r.doer = http.DefaultClient
+	if doer != nil {
+		r.doer = doer
+	}
 
 	return r, nil
 }
 
 // Download implements Provider.
 func (r *FastProvider) Download(ctx context.Context) (float64, error) {
+	if len(r.urls) == 0 {
+		return 0, ErrNoEndpointUrls
+	}
+
 	u := r.urls[0]
 	eg := errgroup.Group{}
 
@@ -119,6 +128,9 @@ func (r *FastProvider) Download(ctx context.Context) (float64, error) {
 
 // Upload implements Provider.
 func (r *FastProvider) Upload(ctx context.Context) (float64, error) {
+	if len(r.urls) == 0 {
+		return 0, ErrNoEndpointUrls
+	}
 	u := r.urls[0]
 
 	// Warm up
@@ -180,6 +192,7 @@ func (r *FastProvider) Upload(ctx context.Context) (float64, error) {
 	return ulSpeed, nil
 }
 
+//
 var dlSizes = [...]int{350, 500, 750, 1000, 1500, 2000, 2500, 3000, 3500, 4000}
 var ulSizes = [...]int{100, 300, 500, 800, 1000, 1500, 2500, 3000, 3500, 4000} // kB
 
@@ -199,7 +212,9 @@ func ulWarmUp(ctx context.Context, doer *http.Client, ulURL string) error {
 	if err != nil {
 		return err
 	}
-	defer resp.Body.Close()
+	defer func() {
+		_ = resp.Body.Close()
+	}()
 	_, err = io.Copy(ioutil.Discard, resp.Body)
 	return err
 }
@@ -220,7 +235,9 @@ func uploadRequest(ctx context.Context, doer *http.Client, ulURL string, w int) 
 	if err != nil {
 		return err
 	}
-	defer resp.Body.Close()
+	defer func() {
+		_ = resp.Body.Close()
+	}()
 
 	_, err = io.Copy(ioutil.Discard, resp.Body)
 	return err
@@ -239,7 +256,9 @@ func dlWarmUp(ctx context.Context, doer *http.Client, dlURL string) error {
 	if err != nil {
 		return err
 	}
-	defer resp.Body.Close()
+	defer func() {
+		_ = resp.Body.Close()
+	}()
 	_, err = io.Copy(ioutil.Discard, resp.Body)
 	return err
 }
@@ -257,7 +276,9 @@ func downloadRequest(ctx context.Context, doer *http.Client, dlURL string) error
 	if err != nil {
 		return err
 	}
-	defer resp.Body.Close()
+	defer func() {
+		_ = resp.Body.Close()
+	}()
 	_, err = io.Copy(ioutil.Discard, resp.Body)
 	return err
 }

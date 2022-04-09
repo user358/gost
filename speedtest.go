@@ -33,6 +33,9 @@ func NewSpeedTestProvider() (*SpeedTestProvider, error) {
 
 // Download implements Provider.
 func (r *SpeedTestProvider) Download(ctx context.Context) (float64, error) {
+	if len(r.servers) == 0 {
+		return 0, ErrNoEndpointUrls
+	}
 	s := r.servers[0]
 	if err := r.servers[0].DownloadTestContext(ctx, false); err != nil {
 		return 0, err
@@ -43,6 +46,9 @@ func (r *SpeedTestProvider) Download(ctx context.Context) (float64, error) {
 
 // Upload implements Provider.
 func (r *SpeedTestProvider) Upload(ctx context.Context) (float64, error) {
+	if len(r.servers) == 0 {
+		return 0, ErrNoEndpointUrls
+	}
 	s := r.servers[0]
 	if err := r.servers[0].UploadTestContext(ctx, false); err != nil {
 		return 0, err

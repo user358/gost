@@ -2,7 +2,11 @@ package gost
 
 import (
 	"context"
+	"errors"
 )
+
+// ErrNoEndpointUrls is returned if the list of urls to speed test was not received.
+var ErrNoEndpointUrls = errors.New("no endpoint urls")
 
 // Provider is the interface that wraps the basic Download and Upload methods.
 type Provider interface {

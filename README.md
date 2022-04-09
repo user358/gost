@@ -29,7 +29,7 @@ func main() {
 	fmt.Printf("speedtest.net download: %5.2f Mbit/s\n", stResult.Download)
 	fmt.Printf("speedtest.net upload: %5.2f Mbit/s\n\n", stResult.Upload)
 
-	fastProvider, err := gost.NewFastProvider()
+	fastProvider, err := gost.NewFastProvider(false, nil)
 	if err != nil {
 		panic(err)
 	}
@@ -48,6 +48,12 @@ func main() {
 
 ```sh
 go test -v
+```
+
+## Benchmark
+
+```sh
+go test -bench=.
 ```
 
 ## LICENSE
